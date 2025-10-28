@@ -1,0 +1,53 @@
+1. Conexão com Wi-Fi
+
+O código inicia conectando o ESP8266 à rede Wi-Fi. Somente após essa conexão é que o dispositivo consegue se registrar no servidor do SinricPro, o que possibilita a comunicação com a Alexa. O processo de conexão é exibido no Serial Monitor, facilitando o diagnóstico em caso de falhas.
+
+2. Integração com SinricPro
+
+O SinricPro é a ponte entre o ESP8266 e a Alexa. Ao iniciar, o código registra o dispositivo usando chaves (APP_KEY, APP_SECRET e SWITCH_ID).
+Depois disso:
+
+Quando a Alexa recebe um comando de voz (por exemplo: “Alexa, ligar luz da sala”), ela envia essa solicitação ao servidor do SinricPro;
+
+O SinricPro repassa o comando ao ESP8266;
+
+O programa interpreta e executa o comando, ligando ou desligando o relé.
+
+O retorno também acontece no sentido inverso: quando o botão físico é pressionado, o ESP8266 envia o novo estado ao SinricPro para manter o sincronia com a Alexa e app.
+
+3. Controle através do Botão Físico
+
+Além do controle por voz, há um botão físico conectado ao ESP8266. Sempre que ele é pressionado:
+
+O estado do relé (ligado/desligado) é invertido;
+
+Esse novo estado é enviado automaticamente ao SinricPro, garantindo que a Alexa saiba que o aparelho foi alterado manualmente;
+
+Um tempo mínimo de intervalo (debounce via software de 1 segundo) evita que vários acionamentos ocorram com um toque só.
+
+Em outras palavras, mesmo com falha de internet, o dispositivo continua funcional via botão.
+
+4. Acionamento do Relé
+
+O relé é conectado a um pino digital do ESP8266.
+O código trabalha com lógica invertida: escreve LOW para ligar e HIGH para desligar. Isso é comum em módulos de relé que são “ativos em nível baixo”.
+
+Sempre que o estado é alterado (por Alexa ou botão), o relé recebe o sinal correspondente e comanda o dispositivo conectado.
+
+5. Callback de Eventos
+
+O código possui funções de “callback” responsáveis por reagir aos eventos:
+
+Quando o comando vem da Alexa/SinricPro, a função onPowerState() é executada. Ela liga ou desliga o relé e registra no serial o que aconteceu.
+
+Quando o evento vem do botão físico, a função handleButtonPress() cuida de inverter o estado, enviar essa atualização ao SinricPro e registrar a ação no monitor serial.
+
+Com isso, os dois mundos (físico e digital) estão sempre sincronizados.
+
+6. Loop Principal
+
+No loop() do Arduino, duas funções são chamadas continuamente:
+
+-handleButtonPress() — verifica se o botão foi acionado;
+-SinricPro.handle() — mantém a comunicação com o servidor viva e processa solicitações remotas.
+-Essa divisão garante que o sistema responda tanto à interação humana local quanto à via Alexa.
